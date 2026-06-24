@@ -73,12 +73,13 @@ export function updateKart(k: Kart, world: World, ctrl: DriveControl, dt: number
     k.angle += ctrl.steer * turn * speedFactor * (k.speed >= 0 ? 1 : -1) * dt;
   }
 
-  // move with wall collision (axis separated)
+  // move with wall collision — SLIDE along walls (no reverse → never sticks)
   const nx = k.x + Math.cos(k.angle) * k.speed * dt;
   const ny = k.y + Math.sin(k.angle) * k.speed * dt;
-  const hw = 8;
-  if (!world.isWall(nx, k.y) && !world.isWall(nx + Math.sign(Math.cos(k.angle)) * hw, k.y)) k.x = nx; else k.speed *= -0.2;
-  if (!world.isWall(k.x, ny) && !world.isWall(k.x, ny + Math.sign(Math.sin(k.angle)) * hw)) k.y = ny; else k.speed *= -0.2;
+  let blocked = false;
+  if (!world.isWall(nx, k.y)) k.x = nx; else blocked = true;
+  if (!world.isWall(k.x, ny)) k.y = ny; else blocked = true;
+  if (blocked) k.speed *= 0.6;
 
   void TILE;
 }

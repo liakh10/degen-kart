@@ -129,18 +129,37 @@ export function createGame(container: HTMLElement): GameHandle {
         updateKart(k, world, { throttle, brake, steer, drift }, dt, started);
         if (input.consumePressed("KeyZ") || input.consumePressed("Enter")) useItem(k);
       } else {
-        updateKart(k, world, started ? aiControl(k, track) : { throttle: 0, brake: false, steer: 0, drift: false }, dt, started);
+        updateKart(k, world, started ? aiControl(k, track, world) : { throttle: 0, brake: false, steer: 0, drift: false }, dt, started);
         // AI uses items
         if (k.item) {
           const tmr = (aiItemTimers.get(k) ?? 1.5) - dt;
           if (tmr <= 0) { useItem(k); aiItemTimers.delete(k); } else aiItemTimers.set(k, tmr);
         }
       }
+      // unstuck: if somehow on a wall tile, nudge back toward the racing line
+      if (world.surfaceAt(k.x, k.y) === SURF.WALL) {
+        const cp = track.checkpoints[world.nearestCheckpoint(k.x, k.y)];
+        const a = Math.atan2(cp.y - k.y, cp.x - k.x);
+        k.x += Math.cos(a) * 95 * dt; k.y += Math.sin(a) * 95 * dt;
+      }
       if (started) updateProgress(k, world, track);
       // drift smoke
       if (k.driftActive && k.driftCharge > 0.2 && Math.random() < 0.6) burst(k.x - Math.cos(k.angle) * 12, k.y - Math.sin(k.angle) * 12, k.driftCharge > 1.4 ? "#ff7b2e" : "#dddddd", 1, 30);
       if (k.boostTime > 0 && Math.random() < 0.7) burst(k.x - Math.cos(k.angle) * 14, k.y - Math.sin(k.angle) * 14, "#ffd23d", 1, 50);
     });
+
+    // separate overlapping karts so they don't stack / pin each other
+    for (let i = 0; i < karts.length; i++) {
+      for (let j = i + 1; j < karts.length; j++) {
+        const a = karts[i], b = karts[j];
+        const dx = b.x - a.x, dy = b.y - a.y; const d = Math.hypot(dx, dy);
+        if (d > 0.1 && d < 22) {
+          const push = (22 - d) / 2, ux = dx / d, uy = dy / d;
+          if (!world.isWall(a.x - ux * push, a.y - uy * push)) { a.x -= ux * push; a.y -= uy * push; }
+          if (!world.isWall(b.x + ux * push, b.y + uy * push)) { b.x += ux * push; b.y += uy * push; }
+        }
+      }
+    }
 
     // item boxes
     for (const b of boxes) {

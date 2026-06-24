@@ -7,6 +7,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GAME_CONFIG, X_URL, CA, TICKER } from "./config";
 import { display, ui } from "./fonts";
 import { MusicEngine } from "./music";
+import { ROSTER } from "./race/engine/characters";
+import { renderFaceCanvas } from "./race/engine/sprites";
 
 export default function Home() {
   const { connected, publicKey } = useWallet();
@@ -65,38 +67,37 @@ export default function Home() {
       )}
       {introLeaving && <div className="absolute inset-0 z-[70] pointer-events-none speed-flash" style={{ background: "radial-gradient(circle at 50% 50%,#ffffff,#ffe08a 55%,transparent)" }} />}
 
-      {/* ticker top-left */}
-      <div className="absolute top-4 left-4 z-20" style={{ opacity: intro ? 0 : 1, transition: "opacity .5s .2s" }}>
-        <div className="toy-card px-3 py-1.5 text-sm" style={{ background: "#fff", color: "#1a1230", fontWeight: 900, fontFamily: "var(--font-display)" }}>{TICKER}</div>
+      {/* TOP BAR: ticker (left) · X + music (right) */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3" style={{ opacity: intro ? 0 : 1, transition: "opacity .5s .2s" }}>
+        <div className="toy-card px-3 py-1.5 text-sm" style={{ background: "#fff", color: "#1a1230", fontFamily: "var(--font-display)" }}>{TICKER}</div>
+        <div className="flex items-center gap-2">
+          <a href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="X" className="toy-btn flex items-center justify-center text-white" style={{ width: 40, height: 40, borderRadius: 12, background: "#1a1230" }}><XIcon size={16} /></a>
+          {!intro && <MusicPlayer on={musicOn} track={trackName} onToggle={toggleMusic} onNext={nextTrack} />}
+        </div>
       </div>
 
-      {/* center menu */}
+      {/* CENTER: logo + showcase + buttons in a row */}
       <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center px-4 ${!intro ? "menu-enter" : ""}`} style={{ opacity: intro ? 0 : 1 }}>
         <div className="bob"><Logo /></div>
-        <div className="mt-2 text-lg md:text-xl text-white text-outline-2" style={{ fontFamily: "var(--font-display)" }}>MEME KART RACING</div>
+        <div className="mt-1 text-lg md:text-2xl text-white text-outline-2" style={{ fontFamily: "var(--font-display)" }}>MEME KART RACING</div>
 
-        <div className="mt-8 w-full max-w-xs flex flex-col gap-4">
-          <button onClick={() => enter("guest")} className="toy-btn w-full py-4 text-2xl text-white" style={{ fontFamily: "var(--font-display)", background: "linear-gradient(180deg,#ff6b9d,#e6356f)" }}>PLAY AS GUEST</button>
-          <button onClick={walletClick} className="toy-btn w-full py-4 text-xl text-white" style={{ fontFamily: "var(--font-display)", background: connected ? "linear-gradient(180deg,#39d98a,#1fae66)" : "linear-gradient(180deg,#8a6bff,#6b3fe0)" }}>
-            {connected ? `✓ ${publicKey?.toBase58().slice(0, 4)}…${publicKey?.toBase58().slice(-4)}` : "LOGIN WALLET"}
+        <Showcase />
+
+        <div className="mt-6 flex flex-col sm:flex-row gap-4 items-center">
+          <button onClick={() => enter("guest")} className="toy-btn px-12 py-5 text-3xl text-white" style={{ fontFamily: "var(--font-display)", background: "linear-gradient(180deg,#ff6b9d,#e6356f)" }}>PLAY</button>
+          <button onClick={walletClick} className="toy-btn px-7 py-4 text-lg text-white" style={{ fontFamily: "var(--font-display)", background: connected ? "linear-gradient(180deg,#39d98a,#1fae66)" : "linear-gradient(180deg,#8a6bff,#6b3fe0)" }}>
+            {connected ? `✓ ${publicKey?.toBase58().slice(0, 4)}…${publicKey?.toBase58().slice(-4)}` : "◈ WALLET"}
           </button>
-        </div>
-
-        <div className="mt-5 grid grid-cols-3 gap-3 w-full max-w-xs">
-          <Chip label="RANKS" onClick={() => setModal("leaderboard")} />
-          <Chip label="HOW TO PLAY" onClick={() => setModal("howto")} />
-          <Chip label="SETTINGS" onClick={() => setModal("settings")} />
-        </div>
-
-        <div className="mt-5 w-full max-w-xs flex flex-col items-stretch gap-2.5">
-          <CADisplay />
-          <a href={X_URL} target="_blank" rel="noopener noreferrer" className="toy-btn flex items-center justify-center gap-2 py-2 text-base text-white" style={{ background: "#1a1230", fontFamily: "var(--font-display)" }}>
-            <XIcon size={16} /> FOLLOW ON X
-          </a>
         </div>
       </div>
 
-      {!intro && <MusicPlayer on={musicOn} track={trackName} onToggle={toggleMusic} onNext={nextTrack} />}
+      {/* BOTTOM NAV BAR: secondary actions + CA, horizontal */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-wrap items-center justify-center gap-2 px-3 pb-4" style={{ opacity: intro ? 0 : 1, transition: "opacity .5s .2s" }}>
+        <Chip label="RANKS" onClick={() => setModal("leaderboard")} />
+        <Chip label="HOW TO PLAY" onClick={() => setModal("howto")} />
+        <Chip label="SETTINGS" onClick={() => setModal("settings")} />
+        <div className="w-full sm:w-auto sm:min-w-[280px]"><CADisplay /></div>
+      </div>
 
       {modal && <Modal onClose={() => setModal(null)} title={modal === "leaderboard" ? "RANKINGS" : modal === "settings" ? "SETTINGS" : "HOW TO PLAY"}>
         {modal === "leaderboard" && <Leaderboard />}
@@ -114,6 +115,25 @@ function Logo() {
       <div className="text-7xl md:text-9xl text-outline" style={{ color: "#ffd23d", filter: "drop-shadow(0 6px 0 #b97a00)" }}>KART</div>
     </div>
   );
+}
+
+function Showcase() {
+  const [i, setI] = useState(0);
+  useEffect(() => { const t = setInterval(() => setI((x) => (x + 1) % ROSTER.length), 1500); return () => clearInterval(t); }, []);
+  const c = ROSTER[i];
+  return (
+    <div className="mt-4 flex flex-col items-center">
+      <div className="wobble"><FaceBig id={c.id} key={c.id} /></div>
+      <div className="mt-2 text-xl text-white text-outline-2" style={{ fontFamily: "var(--font-display)" }}>{c.name}</div>
+    </div>
+  );
+}
+
+function FaceBig({ id }: { id: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const SZ = 92;
+  useEffect(() => { const cv = ref.current; if (!cv) return; const src = renderFaceCanvas(id); const ctx = cv.getContext("2d")!; ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, SZ, SZ); ctx.drawImage(src, 0, 0, SZ, SZ); }, [id]);
+  return <canvas ref={ref} width={SZ} height={SZ} className="pop-in" style={{ width: SZ, height: SZ, imageRendering: "pixelated", borderRadius: 16, border: "4px solid #1a1230", background: "#cfeaff", boxShadow: "0 6px 0 #1a1230" }} />;
 }
 
 function Clouds() {
