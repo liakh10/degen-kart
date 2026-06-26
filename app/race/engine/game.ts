@@ -136,12 +136,6 @@ export function createGame(container: HTMLElement): GameHandle {
           if (tmr <= 0) { useItem(k); aiItemTimers.delete(k); } else aiItemTimers.set(k, tmr);
         }
       }
-      // unstuck: if somehow on a wall tile, nudge back toward the racing line
-      if (world.surfaceAt(k.x, k.y) === SURF.WALL) {
-        const cp = track.checkpoints[world.nearestCheckpoint(k.x, k.y)];
-        const a = Math.atan2(cp.y - k.y, cp.x - k.x);
-        k.x += Math.cos(a) * 95 * dt; k.y += Math.sin(a) * 95 * dt;
-      }
       if (started) updateProgress(k, world, track);
       // drift smoke
       if (k.driftActive && k.driftCharge > 0.2 && Math.random() < 0.6) burst(k.x - Math.cos(k.angle) * 12, k.y - Math.sin(k.angle) * 12, k.driftCharge > 1.4 ? "#ff7b2e" : "#dddddd", 1, 30);
@@ -155,8 +149,8 @@ export function createGame(container: HTMLElement): GameHandle {
         const dx = b.x - a.x, dy = b.y - a.y; const d = Math.hypot(dx, dy);
         if (d > 0.1 && d < 22) {
           const push = (22 - d) / 2, ux = dx / d, uy = dy / d;
-          if (!world.isWall(a.x - ux * push, a.y - uy * push)) { a.x -= ux * push; a.y -= uy * push; }
-          if (!world.isWall(b.x + ux * push, b.y + uy * push)) { b.x += ux * push; b.y += uy * push; }
+          a.x -= ux * push; a.y -= uy * push;
+          b.x += ux * push; b.y += uy * push;
         }
       }
     }
@@ -258,17 +252,27 @@ export function createGame(container: HTMLElement): GameHandle {
     // projectiles
     for (const p of projectiles) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.atan2(p.vy, p.vx)); ctx.drawImage(sprites.rocket, -10, -5); ctx.restore(); }
 
-    // karts (sorted by progress so leaders draw on top a bit; minor)
+    // karts: rotated body + player ring + UPRIGHT founder head + floating name
     for (const k of karts) {
+      if (k.isPlayer) {
+        ctx.strokeStyle = "#19e0ff"; ctx.lineWidth = 2; ctx.globalAlpha = 0.85;
+        ctx.beginPath(); ctx.ellipse(k.x, k.y + 8, 16, 8, 0, 0, 6.28); ctx.stroke(); ctx.globalAlpha = 1;
+      }
       const img = sprites.kart(k.char.id);
       ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(k.angle);
       if (k.spinTime > 0 && Math.floor(k.spinTime * 20) % 2 === 0) ctx.globalAlpha = 0.7;
       ctx.drawImage(img, -img.width / 2, -img.height / 2);
       ctx.restore(); ctx.globalAlpha = 1;
-      if (k.isPlayer) { // YOU ring
-        ctx.strokeStyle = "#19e0ff"; ctx.lineWidth = 2; ctx.globalAlpha = 0.85;
-        ctx.beginPath(); ctx.ellipse(k.x, k.y + 8, 16, 8, 0, 0, 6.28); ctx.stroke(); ctx.globalAlpha = 1;
-      }
+      // founder head sticking up (upright, not rotated)
+      const fimg = sprites.face(k.char.id);
+      const hs = 17;
+      ctx.drawImage(fimg, Math.round(k.x - hs / 2), Math.round(k.y - hs / 2 - 5), hs, hs);
+      // floating name tag
+      ctx.font = "bold 7px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.lineWidth = 3; ctx.strokeStyle = "#1a1230"; ctx.lineJoin = "round";
+      ctx.strokeText(k.char.name, k.x, k.y - 16);
+      ctx.fillStyle = k.isPlayer ? "#19e0ff" : "#ffffff";
+      ctx.fillText(k.char.name, k.x, k.y - 16);
     }
     // particles
     for (const p of particles) { ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); }

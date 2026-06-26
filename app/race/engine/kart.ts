@@ -38,12 +38,14 @@ export class Kart {
 export function updateKart(k: Kart, world: World, ctrl: DriveControl, dt: number, started: boolean) {
   if (k.spinTime > 0) { k.spinTime -= dt; k.angle += 14 * dt; k.speed *= (1 - 2 * dt); ctrl = { throttle: 0, brake: false, steer: 0, drift: false }; }
 
-  const onGrass = world.surfaceAt(k.x, k.y) === SURF.GRASS;
-  const onBoostPad = world.surfaceAt(k.x, k.y) === SURF.BOOST;
+  const surf = world.surfaceAt(k.x, k.y);
+  const onBoostPad = surf === SURF.BOOST;
   if (onBoostPad && k.boostTime < 0.3) k.boostTime = 0.5;
+  // Walls are a slowing rumble strip, NOT a hard wall — so karts can never stick.
+  const offRoad = surf === SURF.GRASS || surf === SURF.WALL;
 
   let maxSpeed = k.maxSpeed;
-  if (onGrass) maxSpeed *= 0.46;
+  if (offRoad) maxSpeed *= surf === SURF.WALL ? 0.62 : 0.46;
   if (k.slowTime > 0) { maxSpeed *= 0.55; k.slowTime -= dt; }
   if (k.boostTime > 0) { maxSpeed = Math.max(maxSpeed, k.boostMax); k.boostTime -= dt; }
 
@@ -51,7 +53,7 @@ export function updateKart(k: Kart, world: World, ctrl: DriveControl, dt: number
   if (!started) { k.speed *= (1 - 3 * dt); }
   else if (ctrl.brake) { k.speed -= k.accel * 1.6 * dt; }
   else { k.speed += ctrl.throttle * k.accel * dt; }
-  k.speed *= (1 - (onGrass ? 2.4 : 1.1) * dt); // drag
+  k.speed *= (1 - (offRoad ? 2.2 : 1.1) * dt); // drag
   k.speed = Math.max(-k.maxSpeed * 0.3, Math.min(maxSpeed, k.speed));
 
   // steering + drift
@@ -73,13 +75,11 @@ export function updateKart(k: Kart, world: World, ctrl: DriveControl, dt: number
     k.angle += ctrl.steer * turn * speedFactor * (k.speed >= 0 ? 1 : -1) * dt;
   }
 
-  // move with wall collision — SLIDE along walls (no reverse → never sticks)
-  const nx = k.x + Math.cos(k.angle) * k.speed * dt;
-  const ny = k.y + Math.sin(k.angle) * k.speed * dt;
-  let blocked = false;
-  if (!world.isWall(nx, k.y)) k.x = nx; else blocked = true;
-  if (!world.isWall(k.x, ny)) k.y = ny; else blocked = true;
-  if (blocked) k.speed *= 0.6;
+  // move freely (no hard walls → never sticks); clamp to world bounds only
+  k.x += Math.cos(k.angle) * k.speed * dt;
+  k.y += Math.sin(k.angle) * k.speed * dt;
+  k.x = Math.max(8, Math.min(world.W - 8, k.x));
+  k.y = Math.max(8, Math.min(world.H - 8, k.y));
 
   void TILE;
 }

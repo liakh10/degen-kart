@@ -19,17 +19,15 @@ export default function Home() {
   const [introLeaving, setIntroLeaving] = useState(false);
   const engineRef = useRef<MusicEngine | null>(null);
   const [musicOn, setMusicOn] = useState(false);
-  const [trackName, setTrackName] = useState("TURBO RUSH");
 
-  useEffect(() => { const e = new MusicEngine(); engineRef.current = e; setTrackName(e.trackName); return () => e.dispose(); }, []);
+  useEffect(() => { const e = new MusicEngine(); engineRef.current = e; return () => e.dispose(); }, []);
 
   function enterSite() {
     const off = (() => { try { return localStorage.getItem("degenkart_music_off") === "1"; } catch { return false; } })();
-    const e = engineRef.current; if (e && !off) { e.play(); setMusicOn(true); setTrackName(e.trackName); }
+    const e = engineRef.current; if (e && !off) { e.play(); setMusicOn(true); }
     setIntroLeaving(true); setTimeout(() => setIntro(false), 650);
   }
   function toggleMusic() { const e = engineRef.current; if (!e) return; e.toggle(); setMusicOn(e.playing); try { localStorage.setItem("degenkart_music_off", e.playing ? "0" : "1"); } catch { /* */ } }
-  function nextTrack() { const e = engineRef.current; if (!e) return; e.next(); setTrackName(e.trackName); setMusicOn(e.playing); }
 
   function enter(mode: "guest" | "wallet", address?: string) { sessionStorage.setItem("degenkart_player", JSON.stringify({ mode, address: address ?? null })); router.push("/select"); }
   useEffect(() => {
@@ -72,7 +70,6 @@ export default function Home() {
         <div className="toy-card px-3 py-1.5 text-sm" style={{ background: "#fff", color: "#1a1230", fontFamily: "var(--font-display)" }}>{TICKER}</div>
         <div className="flex items-center gap-2">
           <a href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="X" className="toy-btn flex items-center justify-center text-white" style={{ width: 40, height: 40, borderRadius: 12, background: "#1a1230" }}><XIcon size={16} /></a>
-          {!intro && <MusicPlayer on={musicOn} track={trackName} onToggle={toggleMusic} onNext={nextTrack} />}
         </div>
       </div>
 
@@ -101,7 +98,7 @@ export default function Home() {
 
       {modal && <Modal onClose={() => setModal(null)} title={modal === "leaderboard" ? "RANKINGS" : modal === "settings" ? "SETTINGS" : "HOW TO PLAY"}>
         {modal === "leaderboard" && <Leaderboard />}
-        {modal === "settings" && <Settings />}
+        {modal === "settings" && <Settings musicOn={musicOn} onToggleMusic={toggleMusic} />}
         {modal === "howto" && <HowTo />}
       </Modal>}
     </main>
@@ -148,17 +145,6 @@ function Chip({ label, onClick }: { label: string; onClick: () => void }) {
   return <button onClick={onClick} className="toy-btn py-2 text-[11px] md:text-xs text-white flex items-center justify-center text-center leading-tight" style={{ fontFamily: "var(--font-display)", background: "linear-gradient(180deg,#4ab6ff,#1f8fe0)", borderRadius: 12 }}>{label}</button>;
 }
 
-function MusicPlayer({ on, track, onToggle, onNext }: { on: boolean; track: string; onToggle: () => void; onNext: () => void }) {
-  return (
-    <div className="absolute bottom-3 right-3 z-20 toy-card flex items-center gap-2 px-3 py-2" style={{ background: "#fff", color: "#1a1230" }}>
-      <span style={{ fontSize: 16, opacity: on ? 1 : 0.4 }}>♪</span>
-      <div className="leading-tight mr-1"><div className="text-[8px] opacity-50">NOW PLAYING</div><div className="text-[11px]" style={{ fontWeight: 800 }}>{on ? track : "PAUSED"}</div></div>
-      <button onClick={onToggle} className="w-7 h-7 flex items-center justify-center cursor-pointer" style={{ border: "2px solid #1a1230", borderRadius: 6, fontWeight: 900 }}>{on ? "❚❚" : "▶"}</button>
-      <button onClick={onNext} className="w-7 h-7 flex items-center justify-center cursor-pointer" style={{ border: "2px solid #1a1230", borderRadius: 6 }}>⏭</button>
-    </div>
-  );
-}
-
 function CADisplay() {
   const [copied, setCopied] = useState(false);
   const isReal = CA !== "SOON" && CA !== "";
@@ -199,15 +185,16 @@ function Leaderboard() {
   </div>);
 }
 
-function Settings() {
+function Settings({ musicOn, onToggleMusic }: { musicOn: boolean; onToggleMusic: () => void }) {
   const [muted, setMuted] = useState(false); const [done, setDone] = useState(false);
   useEffect(() => { try { setMuted(localStorage.getItem("degenkart_muted") === "1"); } catch { /* */ } }, []);
   function toggle() { const n = !muted; setMuted(n); try { localStorage.setItem("degenkart_muted", n ? "1" : "0"); } catch { /* */ } }
   function reset() { try { localStorage.removeItem("degenkart_save_v1"); } catch { /* */ } setDone(true); setTimeout(() => setDone(false), 1500); }
   return (<div className="flex flex-col gap-4" style={{ fontWeight: 700 }}>
+    <div className="flex items-center justify-between text-lg"><span>MUSIC</span><button onClick={onToggleMusic} className="toy-btn px-4 py-1.5 text-white" style={{ background: musicOn ? "#1fae66" : "#e6356f", borderRadius: 10 }}>{musicOn ? "ON" : "OFF"}</button></div>
     <div className="flex items-center justify-between text-lg"><span>SFX</span><button onClick={toggle} className="toy-btn px-4 py-1.5 text-white" style={{ background: muted ? "#e6356f" : "#1fae66", borderRadius: 10 }}>{muted ? "OFF" : "ON"}</button></div>
     <div className="flex items-center justify-between text-lg"><span>PROGRESS</span><button onClick={reset} className="toy-btn px-4 py-1.5 text-white" style={{ background: "#e6356f", borderRadius: 10 }}>{done ? "DONE ✓" : "RESET"}</button></div>
-    <div className="text-xs opacity-60">music has its own player (bottom-right). saved on this device.</div>
+    <div className="text-xs opacity-60">saved on this device.</div>
   </div>);
 }
 
