@@ -1,4 +1,4 @@
-import { ROSTER } from "./characters";
+import { ROSTER, charById, CharDef } from "./characters";
 import { SURF, TILE } from "./track";
 
 export type Canvas = HTMLCanvasElement;
@@ -48,34 +48,54 @@ function buildKart(body: string, skin: string, hair: string): Canvas {
 // ── Caricature faces (original parody, drawn from scratch) ──
 function px(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, c: string) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
 
-function buildFace(id: string): Canvas {
+function buildFace(def: CharDef): Canvas {
   const S = 22;
   const { c, ctx } = make(S, S);
-  const head = (skin: string) => rr(ctx, 4, 3, 14, 16, 4, skin);
-  const eyes = (col = "#1a1230") => { px(ctx, 8, 9, 2, 2, col); px(ctx, 13, 9, 2, 2, col); };
-  if (id === "elon") {
-    head("#e8b48c"); px(ctx, 4, 2, 14, 4, "#5a3a24"); px(ctx, 4, 3, 3, 3, "#5a3a24"); px(ctx, 15, 3, 3, 3, "#5a3a24");
-    eyes(); px(ctx, 9, 14, 5, 1, "#7a4a3a"); // smirk
-  } else if (id === "trump") {
-    head("#e89b4b"); // blonde swoop
-    px(ctx, 3, 1, 16, 5, "#f4e07a"); px(ctx, 3, 4, 4, 4, "#f4e07a"); px(ctx, 15, 4, 4, 4, "#efd86a");
-    px(ctx, 5, 2, 11, 2, "#fff0a0");
-    eyes(); px(ctx, 9, 14, 5, 1, "#b5663a"); px(ctx, 10, 19, 3, 3, "#d33"); // red tie
-  } else if (id === "doge") {
-    rr(ctx, 4, 4, 14, 14, 5, "#e0a44e"); px(ctx, 7, 9, 8, 7, "#f3d39b"); // muzzle
-    px(ctx, 3, 2, 4, 4, "#caa14a"); px(ctx, 15, 2, 4, 4, "#caa14a"); // ears
-    px(ctx, 8, 8, 2, 2, "#1a1230"); px(ctx, 12, 8, 2, 2, "#1a1230"); px(ctx, 10, 12, 2, 2, "#1a1230"); // nose
-  } else if (id === "vitalik") {
-    rr(ctx, 5, 3, 12, 16, 4, "#e9c6a8"); px(ctx, 5, 2, 12, 3, "#3a2c1c");
-    eyes(); px(ctx, 9, 15, 4, 1, "#9a7a5a");
-  } else if (id === "cz") {
-    head("#d9a066"); px(ctx, 4, 2, 14, 4, "#1a1a1a");
-    px(ctx, 7, 8, 8, 3, "#1a1230"); px(ctx, 8, 9, 2, 1, "#9fd"); px(ctx, 12, 9, 2, 1, "#9fd"); // glasses
-    px(ctx, 9, 15, 5, 1, "#9a6a3a");
-  } else { // sbf curly hair
-    px(ctx, 3, 1, 16, 8, "#3a2a20"); for (let i = 0; i < 10; i++) px(ctx, 3 + (i % 5) * 3, 1 + Math.floor(i / 5) * 3, 3, 3, "#4a3528");
-    head("#e3b48c"); eyes(); px(ctx, 9, 15, 4, 1, "#9a6a4a");
+  const f = def.face, skin = def.skin, hair = def.hair;
+  const headRR = (col = skin) => rr(ctx, 4, 3, 14, 16, 4, col);
+  const eyes = (y = 9) => { px(ctx, 8, y, 2, 2, "#1a1230"); px(ctx, 13, y, 2, 2, "#1a1230"); };
+
+  if (f.kind === "anon") {
+    rr(ctx, 3, 2, 16, 18, 5, "#101018");
+    rr(ctx, 6, 6, 10, 11, 3, "#1c2030");
+    px(ctx, 8, 10, 2, 2, "#19e0ff"); px(ctx, 13, 10, 2, 2, "#19e0ff");
+    return c;
   }
+  if (f.kind === "frog") {
+    rr(ctx, 3, 6, 16, 13, 5, skin);
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(7, 5, 3, 0, 6.28); ctx.arc(15, 5, 3, 0, 6.28); ctx.fill();
+    px(ctx, 6, 4, 2, 2, "#1a1230"); px(ctx, 14, 4, 2, 2, "#1a1230");
+    ctx.fillStyle = "#1a1230"; ctx.fillRect(6, 14, 10, 1);
+    return c;
+  }
+  if (f.kind === "dog") {
+    rr(ctx, 4, 4, 14, 14, 5, skin); px(ctx, 7, 9, 8, 7, "#f3d39b");
+    px(ctx, 3, 2, 4, 4, hair); px(ctx, 15, 2, 4, 4, hair);
+    px(ctx, 8, 8, 2, 2, "#1a1230"); px(ctx, 12, 8, 2, 2, "#1a1230"); px(ctx, 10, 12, 2, 2, "#1a1230");
+    if (f.acc === "cap") { ctx.fillStyle = "#1f6fe0"; ctx.fillRect(3, 1, 16, 3); ctx.fillRect(1, 3, 9, 2); }
+    return c;
+  }
+
+  // human
+  headRR();
+  switch (f.style) {
+    case "short": px(ctx, 4, 2, 14, 4, hair); px(ctx, 4, 3, 3, 3, hair); px(ctx, 15, 3, 3, 3, hair); break;
+    case "swoop": px(ctx, 3, 1, 16, 5, hair); px(ctx, 3, 4, 4, 4, hair); px(ctx, 15, 4, 4, 4, hair); px(ctx, 5, 2, 11, 2, "#fff0a0"); break;
+    case "afro": for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; px(ctx, 11 + Math.cos(a) * 8 - 1, 8 + Math.sin(a) * 7 - 1, 3, 3, hair); } headRR(); break;
+    case "long": px(ctx, 3, 2, 16, 4, hair); px(ctx, 3, 2, 3, 14, hair); px(ctx, 16, 2, 3, 14, hair); break;
+    case "spike": for (let i = 0; i < 6; i++) { ctx.fillStyle = hair; ctx.beginPath(); ctx.moveTo(4 + i * 2.4, 4); ctx.lineTo(5.2 + i * 2.4, 0); ctx.lineTo(6.4 + i * 2.4, 4); ctx.closePath(); ctx.fill(); } px(ctx, 4, 3, 14, 2, hair); break;
+    case "buzz": px(ctx, 4, 2, 14, 2, hair); break;
+    case "grey": px(ctx, 4, 2, 14, 4, hair); px(ctx, 4, 3, 3, 4, hair); px(ctx, 15, 3, 3, 4, hair); break;
+    case "bald": default: break;
+  }
+
+  if (f.acc === "shades") { ctx.fillStyle = "#101018"; ctx.fillRect(6, 8, 10, 3); }
+  else if (f.acc === "glasses") { ctx.strokeStyle = "#1a1230"; ctx.lineWidth = 1; ctx.strokeRect(6.5, 8.5, 4, 3); ctx.strokeRect(11.5, 8.5, 4, 3); eyes(9); }
+  else eyes(9);
+
+  if (f.acc === "beard") { ctx.fillStyle = hair; ctx.fillRect(5, 14, 12, 4); }
+  else px(ctx, 9, 15, 4, 1, "#7a4a3a");
+  if (f.acc === "tie") { px(ctx, 10, 19, 3, 3, "#d33"); }
   return c;
 }
 
@@ -137,7 +157,7 @@ export function buildSprites(theme: string): SpriteSet {
   const tileCache = new Map<string, Canvas>();
   return {
     kart: (id) => { if (!kartCache.has(id)) { const ch = ROSTER.find((r) => r.id === id)!; kartCache.set(id, buildKart(ch.kart, ch.skin, ch.hair)); } return kartCache.get(id)!; },
-    face: (id) => { if (!faceCache.has(id)) faceCache.set(id, buildFace(id)); return faceCache.get(id)!; },
+    face: (id) => { if (!faceCache.has(id)) faceCache.set(id, buildFace(charById(id))); return faceCache.get(id)!; },
     tile: (surf, th, variant) => { const k = `${surf}_${th}_${variant % 3}`; if (!tileCache.has(k)) tileCache.set(k, buildTile(surf, th, variant % 3)); return tileCache.get(k)!; },
     itemBox: buildItemBox(), coin: buildCoin(), banana: buildBanana(), oil: buildOil(), rocket: buildRocket(),
   };
@@ -145,4 +165,4 @@ export function buildSprites(theme: string): SpriteSet {
 }
 
 // Standalone face for React select screen (returns dataURL-able canvas)
-export function renderFaceCanvas(id: string): Canvas { return buildFace(id); }
+export function renderFaceCanvas(id: string): Canvas { return buildFace(charById(id)); }

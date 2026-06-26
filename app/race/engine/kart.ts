@@ -18,6 +18,7 @@ export class Kart {
   slowTime = 0;       // oil/gas slow
   shieldTime = 0;     // shield item active
   extraSpeed = 0;     // coin top-speed bonus
+  draftBoost = 0;     // slipstream / drafting bonus
   // race state
   lap = 0;
   cpIndex = 0;
@@ -47,10 +48,10 @@ export function updateKart(k: Kart, world: World, ctrl: DriveControl, dt: number
   // Walls are a slowing rumble strip, NOT a hard wall — so karts can never stick.
   const offRoad = surf === SURF.GRASS || surf === SURF.WALL;
 
-  let maxSpeed = k.maxSpeed + k.extraSpeed;
+  let maxSpeed = k.maxSpeed + k.extraSpeed + k.draftBoost;
   if (offRoad) maxSpeed *= surf === SURF.WALL ? 0.62 : 0.46;
   if (k.slowTime > 0) { maxSpeed *= 0.55; k.slowTime -= dt; }
-  if (k.boostTime > 0) { maxSpeed = Math.max(maxSpeed, k.boostMax + k.extraSpeed); k.boostTime -= dt; }
+  if (k.boostTime > 0) { maxSpeed = Math.max(maxSpeed, k.boostMax + k.extraSpeed + k.draftBoost); k.boostTime -= dt; }
   if (k.shieldTime > 0) k.shieldTime -= dt;
 
   // longitudinal

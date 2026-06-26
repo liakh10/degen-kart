@@ -16,7 +16,7 @@ export interface HudState {
   lap: number; laps: number; place: number; total: number;
   item: string | null; coins: number; speed: number;
   countdown: string | null; boost: boolean; driftCharge: number; driftTier: number;
-  shield: boolean; wrongWay: boolean;
+  shield: boolean; wrongWay: boolean; draft: boolean; comboMult: number;
   lapTime: number; bestLap: number;
   finished: boolean; results: ResultRow[] | null; reward: number;
 }
@@ -65,6 +65,7 @@ export function createGame(container: HTMLElement, opts: GameOpts = {}): GameHan
   const field = [playerChar, ...others.slice(0, 5)];
 
   const karts: Kart[] = [];
+  const aiItemTimers = new Map<Kart, number>();
   const back = track.startAngle + Math.PI;
   const side = track.startAngle + Math.PI / 2;
   field.forEach((ch, i) => {
@@ -74,10 +75,11 @@ export function createGame(container: HTMLElement, opts: GameOpts = {}): GameHan
     const isP = ch.id === playerChar.id;
     const k = new Kart(bx, by, track.startAngle, ch, isP, isP ? econ.mods() : { speed: 0, accel: 0, handling: 0, boost: 0 });
     k.cpIndex = 0;
+    k.item = ch.item;                       // signature item to start
+    if (!isP) aiItemTimers.set(k, 2 + Math.random() * 4);
     karts.push(k);
   });
   const player = karts.find((k) => k.isPlayer)!;
-  const aiItemTimers = new Map<Kart, number>();
 
   // ── items / coins on track ──
   const boxes: ItemBox[] = track.itemBoxes.map((b) => ({ x: b.x, y: b.y, respawn: 0 }));
@@ -85,7 +87,11 @@ export function createGame(container: HTMLElement, opts: GameOpts = {}): GameHan
   const projectiles: Projectile[] = [];
   const hazards: Hazard[] = [];
   const particles: Particle[] = [];
+  const floats: { x: number; y: number; vy: number; life: number; text: string; color: string }[] = [];
+  function floatText(x: number, y: number, text: string, color: string) { floats.push({ x, y, vy: -30, life: 1.1, text, color }); }
   let raceCoins = 0;
+  let comboCount = 0, comboTimer = 0, comboMult = 1;
+  let prevPlace = field.length;
 
   function burst(x: number, y: number, color: string, n: number, spd = 80) {
     for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = spd * (0.3 + Math.random()); particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.4 + Math.random() * 0.3, max: 0.7, color, size: 1 + Math.random() * 2 }); }
@@ -173,6 +179,14 @@ export function createGame(container: HTMLElement, opts: GameOpts = {}): GameHan
       }
     }
 
+    // slipstream / drafting — tuck behind a rival to gain speed
+    for (const k of karts) {
+      let target = 0; const fx = Math.cos(k.angle), fy = Math.sin(k.angle);
+      for (const o of karts) { if (o === k) continue; const dx = o.x - k.x, dy = o.y - k.y; const d = Math.hypot(dx, dy); if (d > 1 && d < 46 && (dx / d) * fx + (dy / d) * fy > 0.8) { target = 34; break; } }
+      k.draftBoost += (target - k.draftBoost) * Math.min(1, dt * 3);
+      if (k.draftBoost > 18 && k.speed > 110 && Math.random() < 0.25) burst(k.x - fx * 10, k.y - fy * 10, "#bfe8ff", 1, 22);
+    }
+
     // item boxes
     for (const b of boxes) {
       if (b.respawn > 0) { b.respawn -= dt; continue; }
@@ -190,8 +204,14 @@ export function createGame(container: HTMLElement, opts: GameOpts = {}): GameHan
     // coins
     for (const c of coins) {
       if (c.got) { c.respawn -= dt; if (c.respawn <= 0) c.got = false; continue; }
-      if (Math.hypot(player.x - c.x, player.y - c.y) < 16) { c.got = true; c.respawn = 8; raceCoins += 5; sfx.coin(); burst(c.x, c.y, "#ffd23d", 5, 60); }
+      if (Math.hypot(player.x - c.x, player.y - c.y) < 16) {
+        comboCount++; comboTimer = 2.5; comboMult = 1 + Math.min(comboCount - 1, 3) * 0.5;
+        const gain = Math.round(5 * comboMult);
+        c.got = true; c.respawn = 8; raceCoins += gain; sfx.coin(); burst(c.x, c.y, "#ffd23d", 5 + Math.min(comboCount, 6), 60);
+        if (comboMult > 1) floatText(player.x, player.y - 18, `x${comboMult.toFixed(1)}`, "#ffd23d");
+      }
     }
+    if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) { comboCount = 0; comboMult = 1; } }
     // coins give a small top-speed bonus (up to +40 at 10 coins)
     player.extraSpeed = Math.min(40, (raceCoins / 5) * 4);
 
@@ -216,14 +236,16 @@ export function createGame(container: HTMLElement, opts: GameOpts = {}): GameHan
       if (h.life <= 0) hazards.splice(i, 1);
     }
 
-    // finishing
+    // finishing + overtake popup
     computePlaces(karts);
+    if (started && !finished) { if (player.place < prevPlace) floatText(player.x, player.y - 22, "OVERTAKE!", "#39d98a"); prevPlace = player.place; }
     for (const k of karts) {
       if (!k.finished && k.lap >= track.laps) { k.finished = true; if (k.isPlayer && !finished) finishRace(); }
     }
 
-    // particles
+    // particles + floating texts
     for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.92; p.vy *= 0.92; if (p.life <= 0) particles.splice(i, 1); }
+    for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.life -= dt; f.y += f.vy * dt; f.vy *= 0.94; if (f.life <= 0) floats.splice(i, 1); }
 
     // lap time + best lap + wrong-way
     if (started && !finished) {
@@ -315,6 +337,10 @@ export function createGame(container: HTMLElement, opts: GameOpts = {}): GameHan
     // particles
     for (const p of particles) { ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); }
     ctx.globalAlpha = 1;
+    // floating texts (overtake / combo)
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 9px sans-serif"; ctx.lineWidth = 3; ctx.lineJoin = "round";
+    for (const f of floats) { ctx.globalAlpha = Math.max(0, f.life); ctx.strokeStyle = "#1a1230"; ctx.strokeText(f.text, f.x, f.y); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y); }
+    ctx.globalAlpha = 1;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     // subtle vignette
@@ -374,7 +400,7 @@ export function createGame(container: HTMLElement, opts: GameOpts = {}): GameHan
       place: player.place, total: karts.length,
       item: player.item, coins: econ.coins + (finished ? 0 : raceCoins), speed: Math.round(Math.abs(player.speed)),
       countdown: cd, boost: player.boostTime > 0, driftCharge: Math.min(1, player.driftCharge / 1.7), driftTier: player.driftTier,
-      shield: player.shieldTime > 0, wrongWay,
+      shield: player.shieldTime > 0, wrongWay, draft: player.draftBoost > 12, comboMult,
       lapTime: curLapTime, bestLap,
       finished, results, reward,
     });

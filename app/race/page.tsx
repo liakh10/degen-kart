@@ -8,7 +8,7 @@ import type { GameHandle, HudState } from "./engine/game";
 
 const EMPTY: HudState = {
   lap: 1, laps: 3, place: 1, total: 6, item: null, coins: 0, speed: 0,
-  countdown: "3", boost: false, driftCharge: 0, driftTier: 0, shield: false, wrongWay: false,
+  countdown: "3", boost: false, driftCharge: 0, driftTier: 0, shield: false, wrongWay: false, draft: false, comboMult: 1,
   lapTime: 0, bestLap: 0, finished: false, results: null, reward: 0,
 };
 
@@ -130,7 +130,11 @@ export default function RacePage() {
           </div>
         </div>
 
-        <div className="absolute bottom-3 right-3 toy-card px-3 py-2" style={{ background: "#fff", fontFamily: "var(--font-display)", color: "#1a1230" }}>{hud.coins.toLocaleString()} $MLDL</div>
+        <div className="absolute bottom-3 right-3 flex flex-col items-end gap-1">
+          {hud.comboMult > 1 && <div className="toy-card px-2 py-0.5 text-[11px]" style={{ background: "#ffd23d", color: "#1a1230", fontFamily: "var(--font-display)" }}>COMBO x{hud.comboMult.toFixed(1)}</div>}
+          {hud.draft && <div className="toy-card px-2 py-0.5 text-[11px]" style={{ background: "#19e0ff", color: "#1a1230", fontFamily: "var(--font-display)" }}>SLIPSTREAM</div>}
+          <div className="toy-card px-3 py-2" style={{ background: "#fff", fontFamily: "var(--font-display)", color: "#1a1230" }}>{hud.coins.toLocaleString()} $MLDL</div>
+        </div>
 
         <button onClick={() => doPause(true)} className="toy-btn absolute top-3 left-1/2 translate-x-[100px] pointer-events-auto px-4 py-2 text-white text-sm" style={{ background: "#1a1230", borderRadius: 10 }}>❚❚</button>
 
