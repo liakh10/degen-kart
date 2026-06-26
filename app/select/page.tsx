@@ -14,7 +14,11 @@ export default function SelectPage() {
   if (!econRef.current && typeof window !== "undefined") econRef.current = new Economy();
   const [, force] = useReducer((x) => x + 1, 0);
   const [tab, setTab] = useState<"racer" | "garage">("racer");
+  const [mode, setModeState] = useState<"quick" | "cup">("quick");
   const econ = econRef.current;
+
+  useEffect(() => { try { setModeState(sessionStorage.getItem("degenkart_mode") === "cup" ? "cup" : "quick"); } catch { /* */ } }, []);
+  function setMode(m: "quick" | "cup") { setModeState(m); try { sessionStorage.setItem("degenkart_mode", m); } catch { /* */ } }
 
   useEffect(() => { if (!econ) force(); }, [econ]);
   if (!econ) return <div className="fixed inset-0" style={{ background: "#7ec8ff" }} />;
@@ -79,6 +83,18 @@ export default function SelectPage() {
                   <div className="text-[11px] opacity-60" style={{ color: "#1a1230" }}>{t.laps} laps</div>
                 </button>
               ))}
+            </div>
+
+            <div className="text-center mt-6 text-2xl text-white text-outline-2" style={{ fontFamily: "var(--font-display)" }}>MODE</div>
+            <div className="grid grid-cols-2 gap-4 mt-3 max-w-md mx-auto">
+              <button onClick={() => setMode("quick")} className="toy-card p-3 text-center" style={{ background: mode === "quick" ? "#fff3c4" : "#fff", border: mode === "quick" ? "4px solid #ffd23d" : "4px solid #1a1230" }}>
+                <div className="text-lg" style={{ fontFamily: "var(--font-display)", color: "#1a1230" }}>QUICK RACE</div>
+                <div className="text-[11px] opacity-60" style={{ color: "#1a1230" }}>one race</div>
+              </button>
+              <button onClick={() => setMode("cup")} className="toy-card p-3 text-center" style={{ background: mode === "cup" ? "#fff3c4" : "#fff", border: mode === "cup" ? "4px solid #ffd23d" : "4px solid #1a1230" }}>
+                <div className="text-lg" style={{ fontFamily: "var(--font-display)", color: "#1a1230" }}>GRAND PRIX</div>
+                <div className="text-[11px] opacity-60" style={{ color: "#1a1230" }}>3 races · points</div>
+              </button>
             </div>
           </>
         ) : (

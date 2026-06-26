@@ -15,9 +15,12 @@ export interface ResultRow { name: string; place: number; you: boolean; }
 export interface HudState {
   lap: number; laps: number; place: number; total: number;
   item: string | null; coins: number; speed: number;
-  countdown: string | null; boost: boolean; driftCharge: number;
+  countdown: string | null; boost: boolean; driftCharge: number; driftTier: number;
+  shield: boolean; wrongWay: boolean;
+  lapTime: number; bestLap: number;
   finished: boolean; results: ResultRow[] | null; reward: number;
 }
+export interface GameOpts { trackIndex?: number; }
 export interface GameHandle {
   onState: (cb: (s: HudState) => void) => void;
   useItem: () => void;
@@ -30,9 +33,10 @@ interface ItemBox { x: number; y: number; respawn: number; }
 interface Coin { x: number; y: number; got: boolean; respawn: number; }
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; color: string; size: number; }
 
-export function createGame(container: HTMLElement): GameHandle {
+export function createGame(container: HTMLElement, opts: GameOpts = {}): GameHandle {
   const econ = new Economy();
-  const trackDef = TRACK_DEFS[econ.selectedTrack % TRACK_DEFS.length];
+  const trackIndex = (opts.trackIndex ?? econ.selectedTrack) % TRACK_DEFS.length;
+  const trackDef = TRACK_DEFS[trackIndex];
   const track: Track = buildTrack(trackDef);
   const world = new World(track);
   const sprites: SpriteSet = buildSprites(track.theme);
@@ -95,6 +99,11 @@ export function createGame(container: HTMLElement): GameHandle {
   let results: ResultRow[] | null = null;
   let reward = 0;
   let lastBeep = 4;
+  let lapStart = 0;
+  let curLapTime = 0;
+  let prevLap = 0;
+  let wrongWay = false;
+  let bestLap = (() => { try { return Number(localStorage.getItem(`degenkart_best_${trackIndex}`)) || 0; } catch { return 0; } })();
 
   function useItem(k: Kart) {
     if (!k.item) return;
@@ -106,6 +115,12 @@ export function createGame(container: HTMLElement): GameHandle {
     else if (t === "WALL") { hazards.push(new Hazard("WALL", bx, by, 12, karts.indexOf(k))); sfx.item(); }
     else if (t === "OIL") { hazards.push(new Hazard("OIL", bx, by, 14, karts.indexOf(k))); sfx.item(); }
     else if (t === "GAS") { hazards.push(new Hazard("GAS", k.x, k.y, 3.2, karts.indexOf(k))); sfx.item(); }
+    else if (t === "SHIELD") { k.shieldTime = 6; sfx.boost(); burst(k.x, k.y, "#19e0ff", 10, 60); }
+    else if (t === "LIGHTNING") {
+      computePlaces(karts);
+      for (const o of karts) { if (o !== k && o.place < k.place && !o.finished) { if (spinOut(o)) { burst(o.x, o.y, "#ffe66b", 12, 110); } } }
+      if (k.isPlayer) cam.shake(5, 0.3); sfx.rocket();
+    }
   }
 
   // ── update ──
@@ -114,7 +129,7 @@ export function createGame(container: HTMLElement): GameHandle {
       countdown -= dt;
       const n = Math.ceil(countdown);
       if (n < lastBeep && n >= 1) { lastBeep = n; sfx.countBeep(); }
-      if (countdown <= 0) { started = true; goTimer = 1.0; sfx.go(); }
+      if (countdown <= 0) { started = true; goTimer = 1.0; sfx.go(); lapStart = performance.now(); }
     }
     if (goTimer > 0) goTimer -= dt;
 
@@ -137,8 +152,11 @@ export function createGame(container: HTMLElement): GameHandle {
         }
       }
       if (started) updateProgress(k, world, track);
-      // drift smoke
-      if (k.driftActive && k.driftCharge > 0.2 && Math.random() < 0.6) burst(k.x - Math.cos(k.angle) * 12, k.y - Math.sin(k.angle) * 12, k.driftCharge > 1.4 ? "#ff7b2e" : "#dddddd", 1, 30);
+      // drift sparks coloured by mini-turbo tier
+      if (k.driftActive && Math.random() < 0.75) {
+        const col = k.driftTier >= 3 ? "#b066ff" : k.driftTier === 2 ? "#ff8a3d" : k.driftTier === 1 ? "#19e0ff" : "#dddddd";
+        burst(k.x - Math.cos(k.angle) * 12, k.y - Math.sin(k.angle) * 12, col, 1, 34);
+      }
       if (k.boostTime > 0 && Math.random() < 0.7) burst(k.x - Math.cos(k.angle) * 14, k.y - Math.sin(k.angle) * 14, "#ffd23d", 1, 50);
     });
 
@@ -174,12 +192,14 @@ export function createGame(container: HTMLElement): GameHandle {
       if (c.got) { c.respawn -= dt; if (c.respawn <= 0) c.got = false; continue; }
       if (Math.hypot(player.x - c.x, player.y - c.y) < 16) { c.got = true; c.respawn = 8; raceCoins += 5; sfx.coin(); burst(c.x, c.y, "#ffd23d", 5, 60); }
     }
+    // coins give a small top-speed bonus (up to +40 at 10 coins)
+    player.extraSpeed = Math.min(40, (raceCoins / 5) * 4);
 
     // projectiles
     for (let i = projectiles.length - 1; i >= 0; i--) {
       const p = projectiles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt;
       let hit = world.isWall(p.x, p.y);
-      if (!hit) for (let ki = 0; ki < karts.length; ki++) { if (ki === p.owner) continue; const k = karts[ki]; if (Math.hypot(k.x - p.x, k.y - p.y) < 16) { spinOut(k); burst(k.x, k.y, "#ff5b3a", 12, 110); if (k.isPlayer) { cam.shake(6, 0.3); sfx.spin(); } hit = true; break; } }
+      if (!hit) for (let ki = 0; ki < karts.length; ki++) { if (ki === p.owner) continue; const k = karts[ki]; if (Math.hypot(k.x - p.x, k.y - p.y) < 16) { if (spinOut(k)) { burst(k.x, k.y, "#ff5b3a", 12, 110); if (k.isPlayer) { cam.shake(6, 0.3); sfx.spin(); } } else { burst(k.x, k.y, "#19e0ff", 10, 80); } hit = true; break; } }
       if (hit || p.life <= 0) { burst(p.x, p.y, "#ffae3a", 6, 80); projectiles.splice(i, 1); }
     }
     // hazards
@@ -190,7 +210,7 @@ export function createGame(container: HTMLElement): GameHandle {
         const k = karts[ki]; const d = Math.hypot(k.x - h.x, k.y - h.y);
         if (d < r) {
           if (h.type === "OIL" || h.type === "GAS") slow(k);
-          else { if (ki === h.owner && h.life > (h.type === "BANANA" ? 21 : 11)) continue; spinOut(k); burst(k.x, k.y, "#dddddd", 8); if (k.isPlayer) { cam.shake(4, 0.2); sfx.spin(); } h.life = 0; }
+          else { if (ki === h.owner && h.life > (h.type === "BANANA" ? 21 : 11)) continue; if (spinOut(k)) { burst(k.x, k.y, "#dddddd", 8); if (k.isPlayer) { cam.shake(4, 0.2); sfx.spin(); } } else { burst(k.x, k.y, "#19e0ff", 8); } h.life = 0; }
         }
       }
       if (h.life <= 0) hazards.splice(i, 1);
@@ -205,8 +225,22 @@ export function createGame(container: HTMLElement): GameHandle {
     // particles
     for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.92; p.vy *= 0.92; if (p.life <= 0) particles.splice(i, 1); }
 
-    // camera
-    cam.zoom = 1.7;
+    // lap time + best lap + wrong-way
+    if (started && !finished) {
+      curLapTime = (performance.now() - lapStart) / 1000;
+      if (player.lap > prevLap) {
+        if (player.lap >= 1 && (bestLap === 0 || curLapTime < bestLap)) { bestLap = curLapTime; try { localStorage.setItem(`degenkart_best_${trackIndex}`, String(bestLap)); } catch { /* */ } }
+        prevLap = player.lap; lapStart = performance.now(); curLapTime = 0;
+      }
+      const N = track.checkpoints.length;
+      const nextCp = track.checkpoints[(player.cpIndex + 1) % N];
+      const desired = Math.atan2(nextCp.y - player.y, nextCp.x - player.x);
+      let dd = desired - player.angle; while (dd > Math.PI) dd -= Math.PI * 2; while (dd < -Math.PI) dd += Math.PI * 2;
+      wrongWay = Math.abs(dd) > 2.2 && player.speed > 50;
+    }
+
+    // camera — pull in slightly on boost for a sense of speed
+    cam.zoom += ((player.boostTime > 0 ? 1.62 : 1.7) - cam.zoom) * Math.min(1, dt * 6);
     cam.follow(player.x, player.y, world.W, world.H, dt);
   }
 
@@ -258,6 +292,10 @@ export function createGame(container: HTMLElement): GameHandle {
         ctx.strokeStyle = "#19e0ff"; ctx.lineWidth = 2; ctx.globalAlpha = 0.85;
         ctx.beginPath(); ctx.ellipse(k.x, k.y + 8, 16, 8, 0, 0, 6.28); ctx.stroke(); ctx.globalAlpha = 1;
       }
+      if (k.shieldTime > 0) {
+        ctx.strokeStyle = "#19e0ff"; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.5 + 0.3 * Math.sin(now / 90);
+        ctx.beginPath(); ctx.arc(k.x, k.y, 17, 0, 6.28); ctx.stroke(); ctx.globalAlpha = 1;
+      }
       const img = sprites.kart(k.char.id);
       ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(k.angle);
       if (k.spinTime > 0 && Math.floor(k.spinTime * 20) % 2 === 0) ctx.globalAlpha = 0.7;
@@ -283,6 +321,20 @@ export function createGame(container: HTMLElement): GameHandle {
     const g = ctx.createRadialGradient(container.clientWidth / 2, container.clientHeight / 2, container.clientHeight * 0.4, container.clientWidth / 2, container.clientHeight / 2, container.clientHeight * 0.8);
     g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,0.32)");
     ctx.fillStyle = g; ctx.fillRect(0, 0, container.clientWidth, container.clientHeight);
+
+    // speed lines while boosting
+    if (player.boostTime > 0) {
+      const W = container.clientWidth, H = container.clientHeight, cx = W / 2, cy = H / 2;
+      ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 2;
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * 6.28 + now / 400;
+        const r0 = Math.min(W, H) * (0.42 + (i % 3) * 0.05);
+        const r1 = r0 + 60;
+        ctx.globalAlpha = 0.35 + 0.25 * Math.random();
+        ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
   function drawStartLine() {
@@ -321,7 +373,9 @@ export function createGame(container: HTMLElement): GameHandle {
       lap: displayLap(player, track.laps), laps: track.laps,
       place: player.place, total: karts.length,
       item: player.item, coins: econ.coins + (finished ? 0 : raceCoins), speed: Math.round(Math.abs(player.speed)),
-      countdown: cd, boost: player.boostTime > 0, driftCharge: Math.min(1, player.driftCharge / 2),
+      countdown: cd, boost: player.boostTime > 0, driftCharge: Math.min(1, player.driftCharge / 1.7), driftTier: player.driftTier,
+      shield: player.shieldTime > 0, wrongWay,
+      lapTime: curLapTime, bestLap,
       finished, results, reward,
     });
   }

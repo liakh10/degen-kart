@@ -12,9 +12,12 @@ export class Kart {
   driftActive = false;
   driftDir = 0;
   driftCharge = 0;
+  driftTier = 0;      // 0..3 mini-turbo tier while drifting
   boostTime = 0;
   spinTime = 0;
   slowTime = 0;       // oil/gas slow
+  shieldTime = 0;     // shield item active
+  extraSpeed = 0;     // coin top-speed bonus
   // race state
   lap = 0;
   cpIndex = 0;
@@ -44,10 +47,11 @@ export function updateKart(k: Kart, world: World, ctrl: DriveControl, dt: number
   // Walls are a slowing rumble strip, NOT a hard wall — so karts can never stick.
   const offRoad = surf === SURF.GRASS || surf === SURF.WALL;
 
-  let maxSpeed = k.maxSpeed;
+  let maxSpeed = k.maxSpeed + k.extraSpeed;
   if (offRoad) maxSpeed *= surf === SURF.WALL ? 0.62 : 0.46;
   if (k.slowTime > 0) { maxSpeed *= 0.55; k.slowTime -= dt; }
-  if (k.boostTime > 0) { maxSpeed = Math.max(maxSpeed, k.boostMax); k.boostTime -= dt; }
+  if (k.boostTime > 0) { maxSpeed = Math.max(maxSpeed, k.boostMax + k.extraSpeed); k.boostTime -= dt; }
+  if (k.shieldTime > 0) k.shieldTime -= dt;
 
   // longitudinal
   if (!started) { k.speed *= (1 - 3 * dt); }
@@ -64,13 +68,15 @@ export function updateKart(k: Kart, world: World, ctrl: DriveControl, dt: number
     if (!k.driftActive) { k.driftActive = true; k.driftDir = Math.sign(ctrl.steer); k.driftCharge = 0; }
     turn *= 1.55;
     k.driftCharge += dt;
+    k.driftTier = k.driftCharge > 1.7 ? 3 : k.driftCharge > 1.0 ? 2 : k.driftCharge > 0.45 ? 1 : 0;
     // bias steer toward drift direction
     const steer = k.driftDir * 0.55 + ctrl.steer * 0.55;
     k.angle += steer * turn * speedFactor * dt;
   } else {
     if (k.driftActive) {
-      if (k.driftCharge > 0.55) k.boostTime = Math.max(k.boostTime, 0.45 + Math.min(k.driftCharge, 2.2) * 0.38);
-      k.driftActive = false; k.driftCharge = 0;
+      const byTier = [0, 0.5, 0.95, 1.6];
+      if (k.driftTier >= 1) k.boostTime = Math.max(k.boostTime, byTier[k.driftTier]);
+      k.driftActive = false; k.driftCharge = 0; k.driftTier = 0;
     }
     k.angle += ctrl.steer * turn * speedFactor * (k.speed >= 0 ? 1 : -1) * dt;
   }
@@ -84,5 +90,10 @@ export function updateKart(k: Kart, world: World, ctrl: DriveControl, dt: number
   void TILE;
 }
 
-export function spinOut(k: Kart) { if (k.spinTime <= 0) { k.spinTime = 0.9; k.speed *= 0.3; k.boostTime = 0; k.driftActive = false; } }
+// Returns true if the hit landed (false if blocked by shield).
+export function spinOut(k: Kart): boolean {
+  if (k.shieldTime > 0) { k.shieldTime = 0; return false; }
+  if (k.spinTime <= 0) { k.spinTime = 0.9; k.speed *= 0.3; k.boostTime = 0; k.driftActive = false; }
+  return true;
+}
 export function slow(k: Kart) { k.slowTime = Math.max(k.slowTime, 1.2); }
