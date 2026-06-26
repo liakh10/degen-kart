@@ -3,7 +3,7 @@ import "./globals.css";
 import { SolanaProviders } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Meme Lords Drift League — $MLDL",
+  title: "Meme Lords Drift League",
   description: "Meme Lords Drift League: pixel kart racing on Solana. Pick your meme lord, drift, blast rivals and farm $MLDL.",
   openGraph: {
     title: "Meme Lords Drift League — $MLDL",

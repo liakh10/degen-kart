@@ -65,12 +65,9 @@ export default function Home() {
       )}
       {introLeaving && <div className="absolute inset-0 z-[70] pointer-events-none speed-flash" style={{ background: "radial-gradient(circle at 50% 50%,#ffffff,#ffe08a 55%,transparent)" }} />}
 
-      {/* TOP BAR: ticker (left) · X + music (right) */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3" style={{ opacity: intro ? 0 : 1, transition: "opacity .5s .2s" }}>
-        <div className="toy-card px-3 py-1.5 text-sm" style={{ background: "#fff", color: "#1a1230", fontFamily: "var(--font-display)" }}>{TICKER}</div>
-        <div className="flex items-center gap-2">
-          <a href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="X" className="toy-btn flex items-center justify-center text-white" style={{ width: 40, height: 40, borderRadius: 12, background: "#1a1230" }}><XIcon size={16} /></a>
-        </div>
+      {/* TOP BAR: X (right) */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-end px-4 py-3" style={{ opacity: intro ? 0 : 1, transition: "opacity .5s .2s" }}>
+        <a href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="X" className="toy-btn flex items-center justify-center text-white" style={{ width: 40, height: 40, borderRadius: 12, background: "#1a1230" }}><XIcon size={16} /></a>
       </div>
 
       {/* CENTER: logo + showcase + buttons in a row */}
@@ -86,6 +83,12 @@ export default function Home() {
             {connected ? `✓ ${publicKey?.toBase58().slice(0, 4)}…${publicKey?.toBase58().slice(-4)}` : "◈ WALLET"}
           </button>
         </div>
+
+        {/* ticker + CA under PLAY */}
+        <div className="mt-5 w-full max-w-sm flex flex-col items-center gap-2">
+          <div className="toy-card px-5 py-1.5 text-lg" style={{ background: "#fff", color: "#1a1230", fontFamily: "var(--font-display)" }}>{TICKER}</div>
+          <div className="w-full"><CADisplay /></div>
+        </div>
       </div>
 
       {/* BOTTOM NAV BAR: secondary actions + CA, horizontal */}
@@ -93,7 +96,6 @@ export default function Home() {
         <Chip label="RANKS" onClick={() => setModal("leaderboard")} />
         <Chip label="HOW TO PLAY" onClick={() => setModal("howto")} />
         <Chip label="SETTINGS" onClick={() => setModal("settings")} />
-        <div className="w-full sm:w-auto sm:min-w-[280px]"><CADisplay /></div>
       </div>
 
       {modal && <Modal onClose={() => setModal(null)} title={modal === "leaderboard" ? "RANKINGS" : modal === "settings" ? "SETTINGS" : "HOW TO PLAY"}>
