@@ -80,9 +80,9 @@ export default function Home() {
         </div>
 
         {/* ticker + CA + X under PLAY */}
-        <div className="mt-8 w-full max-w-sm flex flex-col items-center gap-4">
+        <div className="mt-8 w-full flex flex-col items-center gap-4 px-4">
           <div className="toy-card px-5 py-1.5 text-lg" style={{ background: "#fff", color: "#1a1230", fontFamily: "var(--font-display)" }}>{TICKER}</div>
-          <div className="w-full"><CADisplay /></div>
+          <CADisplay />
           <a href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="Follow on X" className="toy-btn flex items-center justify-center text-white" style={{ width: 48, height: 48, borderRadius: 14, background: "#1a1230" }}>
             <XIcon size={20} />
           </a>
@@ -150,10 +150,10 @@ function CADisplay() {
   const isReal = CA !== "SOON" && CA !== "";
   function copy() { if (!isReal) return; navigator.clipboard.writeText(CA); setCopied(true); setTimeout(() => setCopied(false), 1500); }
   return (
-    <div className="toy-card flex items-center justify-center gap-2 px-3 py-2 overflow-x-auto" style={{ background: "#fff", whiteSpace: "nowrap" }}>
-      <span className="text-sm shrink-0" style={{ color: "#1f8fe0", fontWeight: 900 }}>CA:</span>
-      <span className="text-xs md:text-sm" style={{ color: copied ? "#1fae66" : isReal ? "#1a1230" : "#8a86a0", fontWeight: 700 }}>{copied ? "COPIED!" : CA}</span>
-      {isReal && <button onClick={copy} className="shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 26, height: 26, border: "2px solid #1a1230", borderRadius: 6, color: copied ? "#1fae66" : "#1f8fe0" }}>{copied ? "✓" : "⧉"}</button>}
+    <div className="toy-card inline-flex items-center justify-center gap-2 px-4 py-2 mx-auto" style={{ background: "#fff", whiteSpace: "nowrap", maxWidth: "94vw" }}>
+      <span className="shrink-0" style={{ color: "#1f8fe0", fontWeight: 900, fontSize: 13 }}>CA:</span>
+      <span style={{ color: copied ? "#1fae66" : isReal ? "#1a1230" : "#8a86a0", fontWeight: 700, fontSize: "clamp(8px, 2.5vw, 13px)" }}>{copied ? "COPIED!" : CA}</span>
+      {isReal && <button onClick={copy} aria-label="Copy CA" className="shrink-0 flex items-center justify-center cursor-pointer" style={{ width: 26, height: 26, border: "2px solid #1a1230", borderRadius: 6, color: copied ? "#1fae66" : "#1f8fe0" }}>{copied ? "✓" : "⧉"}</button>}
     </div>
   );
 }
