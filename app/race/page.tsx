@@ -83,7 +83,7 @@ export default function RacePage() {
         </div>
 
         {/* coins */}
-        <div className="absolute bottom-3 right-3 toy-card px-3 py-2" style={{ background: "#fff", fontFamily: "var(--font-display)", color: "#1a1230" }}>{hud.coins.toLocaleString()} $KART</div>
+        <div className="absolute bottom-3 right-3 toy-card px-3 py-2" style={{ background: "#fff", fontFamily: "var(--font-display)", color: "#1a1230" }}>{hud.coins.toLocaleString()} $MLDL</div>
 
         {/* drift charge */}
         {hud.driftCharge > 0.05 && !hud.finished && (
@@ -106,7 +106,7 @@ export default function RacePage() {
       {/* loading */}
       {phase === "loading" && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center" style={{ background: "linear-gradient(180deg,#9fdcff,#7ec8ff)" }}>
-          <div className="text-6xl text-outline" style={{ fontFamily: "var(--font-display)", color: "#ffd23d" }}>DEGEN KART</div>
+          <div className="text-5xl text-outline" style={{ fontFamily: "var(--font-display)", color: "#ffd23d" }}>MEME LORDS</div>
           <div className="mt-4 text-lg" style={{ color: "#1a1230", fontWeight: 800 }}>warming up the engines…</div>
         </div>
       )}
@@ -131,7 +131,7 @@ export default function RacePage() {
             <div className="text-center text-4xl text-outline-2" style={{ fontFamily: "var(--font-display)", color: hud.results.find((r) => r.you)!.place === 1 ? "#ffd23d" : "#1f8fe0" }}>
               {hud.results.find((r) => r.you)!.place === 1 ? "YOU WIN!" : `${ordinal(hud.results.find((r) => r.you)!.place)} PLACE`}
             </div>
-            <div className="text-center mt-2 text-lg" style={{ color: "#1fae66", fontFamily: "var(--font-display)" }}>+{hud.reward.toLocaleString()} $KART</div>
+            <div className="text-center mt-2 text-lg" style={{ color: "#1fae66", fontFamily: "var(--font-display)" }}>+{hud.reward.toLocaleString()} $MLDL</div>
             <div className="flex flex-col gap-1.5 mt-4">
               {hud.results.map((r, i) => (
                 <div key={i} className="flex items-center justify-between px-3 py-1.5" style={{ background: r.you ? "#ffe9a8" : "#f0f0f7", border: r.you ? "3px solid #ffd23d" : "3px solid transparent", borderRadius: 10, fontWeight: 700, color: "#1a1230" }}>

@@ -31,7 +31,7 @@ export default function SelectPage() {
         {/* header */}
         <div className="flex items-center justify-between">
           <button onClick={() => router.push("/")} className="toy-btn px-4 py-2 text-white text-sm" style={{ background: "#1a1230", borderRadius: 12 }}>◀ MENU</button>
-          <div className="toy-card px-4 py-2 text-lg" style={{ background: "#fff", fontFamily: "var(--font-display)", color: "#1a1230" }}>{econ.coins.toLocaleString()} $KART</div>
+          <div className="toy-card px-4 py-2 text-lg" style={{ background: "#fff", fontFamily: "var(--font-display)", color: "#1a1230" }}>{econ.coins.toLocaleString()} $MLDL</div>
         </div>
 
         {/* tabs */}
@@ -45,7 +45,7 @@ export default function SelectPage() {
 
         {tab === "racer" ? (
           <>
-            <div className="text-center mt-5 text-2xl text-white text-outline-2" style={{ fontFamily: "var(--font-display)" }}>PICK YOUR DEGEN</div>
+            <div className="text-center mt-5 text-2xl text-white text-outline-2" style={{ fontFamily: "var(--font-display)" }}>PICK YOUR MEME LORD</div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
               {ROSTER.map((c) => {
                 const unlocked = econ.isUnlocked(c.id); const selected = c.id === sel;
@@ -64,7 +64,7 @@ export default function SelectPage() {
                       <Stat label="HND" v={c.stats.handling} />
                     </div>
                     {!unlocked && <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(26,18,48,0.45)", borderRadius: 14 }}>
-                      <span className="toy-card px-3 py-1 text-sm text-white" style={{ background: "#1a1230", fontFamily: "var(--font-display)" }}>🔒 {c.unlock} $KART</span>
+                      <span className="toy-card px-3 py-1 text-sm text-white" style={{ background: "#1a1230", fontFamily: "var(--font-display)" }}>🔒 {c.unlock} $MLDL</span>
                     </div>}
                   </button>
                 );
@@ -127,7 +127,7 @@ function Garage({ econ, onChange }: { econ: Economy; onChange: () => void }) {
               <div className="flex-1">
                 <div style={{ fontFamily: "var(--font-display)", color: "#1a1230" }}>{c.name}</div>
                 {owned ? <div className="text-xs" style={{ color: "#1fae66", fontWeight: 800 }}>OWNED</div>
-                  : <button disabled={econ.coins < c.unlock} onClick={() => { if (econ.unlock(c.id)) onChange(); }} className="toy-btn px-2 py-1 text-white text-xs disabled:opacity-40" style={{ background: "#e6356f", borderRadius: 8 }}>{c.unlock} $KART</button>}
+                  : <button disabled={econ.coins < c.unlock} onClick={() => { if (econ.unlock(c.id)) onChange(); }} className="toy-btn px-2 py-1 text-white text-xs disabled:opacity-40" style={{ background: "#e6356f", borderRadius: 8 }}>{c.unlock} $MLDL</button>}
               </div>
             </div>
           );

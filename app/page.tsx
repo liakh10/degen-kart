@@ -76,7 +76,7 @@ export default function Home() {
       {/* CENTER: logo + showcase + buttons in a row */}
       <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center px-4 ${!intro ? "menu-enter" : ""}`} style={{ opacity: intro ? 0 : 1 }}>
         <div className="bob"><Logo /></div>
-        <div className="mt-1 text-lg md:text-2xl text-white text-outline-2" style={{ fontFamily: "var(--font-display)" }}>MEME KART RACING</div>
+        <div className="mt-1 text-lg md:text-2xl text-white text-outline-2" style={{ fontFamily: "var(--font-display)" }}>DRIFT · RACE · EARN $MLDL</div>
 
         <Showcase />
 
@@ -108,8 +108,8 @@ export default function Home() {
 function Logo() {
   return (
     <div className="select-none text-center leading-none" style={{ fontFamily: "var(--font-display)" }}>
-      <div className="text-xl md:text-2xl" style={{ color: "#1a1230" }}>DEGEN</div>
-      <div className="text-7xl md:text-9xl text-outline" style={{ color: "#ffd23d", filter: "drop-shadow(0 6px 0 #b97a00)" }}>KART</div>
+      <div className="text-lg md:text-2xl" style={{ color: "#1a1230" }}>MEME LORDS</div>
+      <div className="text-5xl md:text-7xl text-outline" style={{ color: "#ffd23d", filter: "drop-shadow(0 6px 0 #b97a00)" }}>DRIFT LEAGUE</div>
     </div>
   );
 }
@@ -180,8 +180,8 @@ function Leaderboard() {
     setRows([...fake, { name: "YOU", score: mine, you: true }].sort((a, b) => b.score - a.score).slice(0, 8));
   }, []);
   return (<div className="flex flex-col gap-1.5" style={{ fontWeight: 700 }}>
-    {rows.map((r, i) => <div key={i} className="flex items-center justify-between px-3 py-1.5" style={{ background: r.you ? "#ffe9a8" : "#f0f0f7", border: r.you ? "3px solid #ffd23d" : "3px solid transparent", borderRadius: 10 }}><span>{i + 1}. {r.name}</span><span style={{ color: "#1fae66" }}>{r.score.toLocaleString()} $KART</span></div>)}
-    <div className="mt-2 text-center text-xs opacity-60">your $KART balance is your rank score</div>
+    {rows.map((r, i) => <div key={i} className="flex items-center justify-between px-3 py-1.5" style={{ background: r.you ? "#ffe9a8" : "#f0f0f7", border: r.you ? "3px solid #ffd23d" : "3px solid transparent", borderRadius: 10 }}><span>{i + 1}. {r.name}</span><span style={{ color: "#1fae66" }}>{r.score.toLocaleString()} $MLDL</span></div>)}
+    <div className="mt-2 text-center text-xs opacity-60">your $MLDL balance is your rank score</div>
   </div>);
 }
 
@@ -202,7 +202,7 @@ function HowTo() {
   const rows = [["↑ / W", "accelerate"], ["↓ / S", "brake"], ["← → / A D", "steer"], ["SHIFT / SPACE", "drift (hold to boost)"], ["Z / ENTER", "use item"]];
   return (<div className="flex flex-col gap-2" style={{ fontWeight: 700 }}>
     {rows.map(([k, v], i) => <div key={i} className="flex items-center justify-between"><span className="px-2 py-0.5" style={{ background: "#1a1230", color: "#fff", borderRadius: 6 }}>{k}</span><span>{v}</span></div>)}
-    <div className="mt-2 text-sm opacity-70">Drift around corners to charge a turbo boost. Grab item boxes, blast rivals, collect $KART and finish first.</div>
+    <div className="mt-2 text-sm opacity-70">Drift around corners to charge a turbo boost. Grab item boxes, blast rivals, collect $MLDL and finish first.</div>
   </div>);
 }
 

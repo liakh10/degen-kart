@@ -117,7 +117,7 @@ function buildCoin(): Canvas {
   ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.ellipse(8, 13, 5, 2, 0, 0, 6.28); ctx.fill();
   ctx.fillStyle = "#caa10a"; ctx.beginPath(); ctx.arc(8, 7, 6, 0, 6.28); ctx.fill();
   ctx.fillStyle = "#ffd23d"; ctx.beginPath(); ctx.arc(8, 7, 4.5, 0, 6.28); ctx.fill();
-  ctx.fillStyle = "#7a5a00"; ctx.font = "bold 7px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("K", 8, 7.5);
+  ctx.fillStyle = "#7a5a00"; ctx.font = "bold 7px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("M", 8, 7.5);
   return c;
 }
 function buildBanana(): Canvas { const { c, ctx } = make(16, 16); ctx.fillStyle = "#ffd23d"; ctx.beginPath(); ctx.arc(8, 12, 8, Math.PI * 1.05, Math.PI * 1.95); ctx.lineTo(13, 9); ctx.arc(8, 11, 5, Math.PI * 1.9, Math.PI * 1.1, true); ctx.closePath(); ctx.fill(); ctx.fillStyle = "#5a3a10"; ctx.fillRect(2, 7, 2, 2); return c; }
