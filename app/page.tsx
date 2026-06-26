@@ -83,8 +83,8 @@ export default function Home() {
         <div className="mt-8 w-full max-w-sm flex flex-col items-center gap-4">
           <div className="toy-card px-5 py-1.5 text-lg" style={{ background: "#fff", color: "#1a1230", fontFamily: "var(--font-display)" }}>{TICKER}</div>
           <div className="w-full"><CADisplay /></div>
-          <a href={X_URL} target="_blank" rel="noopener noreferrer" className="toy-btn flex items-center justify-center gap-2 px-6 py-2.5 text-base text-white" style={{ background: "#1a1230", fontFamily: "var(--font-display)" }}>
-            <XIcon size={16} /> FOLLOW ON X
+          <a href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="Follow on X" className="toy-btn flex items-center justify-center text-white" style={{ width: 48, height: 48, borderRadius: 14, background: "#1a1230" }}>
+            <XIcon size={20} />
           </a>
         </div>
       </div>
