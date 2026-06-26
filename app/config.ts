@@ -5,6 +5,6 @@ export const GAME_CONFIG = {
 };
 
 export const CA: string = "SOON";           // Replace with real CA on launch
-export const X_URL = "https://x.com/soon";   // Replace with your X handle
+export const X_URL = "https://x.com/mldlplay_sol";
 export const TICKER = "$MLDL";
 export const TOKEN_NAME = "MLDL";

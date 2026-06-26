@@ -65,11 +65,6 @@ export default function Home() {
       )}
       {introLeaving && <div className="absolute inset-0 z-[70] pointer-events-none speed-flash" style={{ background: "radial-gradient(circle at 50% 50%,#ffffff,#ffe08a 55%,transparent)" }} />}
 
-      {/* TOP BAR: X (right) */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-end px-4 py-3" style={{ opacity: intro ? 0 : 1, transition: "opacity .5s .2s" }}>
-        <a href={X_URL} target="_blank" rel="noopener noreferrer" aria-label="X" className="toy-btn flex items-center justify-center text-white" style={{ width: 40, height: 40, borderRadius: 12, background: "#1a1230" }}><XIcon size={16} /></a>
-      </div>
-
       {/* CENTER: logo + showcase + buttons in a row */}
       <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center px-4 ${!intro ? "menu-enter" : ""}`} style={{ opacity: intro ? 0 : 1 }}>
         <div className="bob"><Logo /></div>
@@ -77,22 +72,25 @@ export default function Home() {
 
         <Showcase />
 
-        <div className="mt-6 flex flex-col sm:flex-row gap-4 items-center">
+        <div className="mt-8 flex flex-col sm:flex-row gap-8 items-center">
           <button onClick={() => enter("guest")} className="toy-btn px-12 py-5 text-3xl text-white" style={{ fontFamily: "var(--font-display)", background: "linear-gradient(180deg,#ff6b9d,#e6356f)" }}>PLAY</button>
           <button onClick={walletClick} className="toy-btn px-7 py-4 text-lg text-white" style={{ fontFamily: "var(--font-display)", background: connected ? "linear-gradient(180deg,#39d98a,#1fae66)" : "linear-gradient(180deg,#8a6bff,#6b3fe0)" }}>
             {connected ? `✓ ${publicKey?.toBase58().slice(0, 4)}…${publicKey?.toBase58().slice(-4)}` : "◈ WALLET"}
           </button>
         </div>
 
-        {/* ticker + CA under PLAY */}
-        <div className="mt-5 w-full max-w-sm flex flex-col items-center gap-2">
+        {/* ticker + CA + X under PLAY */}
+        <div className="mt-8 w-full max-w-sm flex flex-col items-center gap-4">
           <div className="toy-card px-5 py-1.5 text-lg" style={{ background: "#fff", color: "#1a1230", fontFamily: "var(--font-display)" }}>{TICKER}</div>
           <div className="w-full"><CADisplay /></div>
+          <a href={X_URL} target="_blank" rel="noopener noreferrer" className="toy-btn flex items-center justify-center gap-2 px-6 py-2.5 text-base text-white" style={{ background: "#1a1230", fontFamily: "var(--font-display)" }}>
+            <XIcon size={16} /> FOLLOW ON X
+          </a>
         </div>
       </div>
 
       {/* BOTTOM NAV BAR: secondary actions + CA, horizontal */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-wrap items-center justify-center gap-2 px-3 pb-4" style={{ opacity: intro ? 0 : 1, transition: "opacity .5s .2s" }}>
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-wrap items-center justify-center gap-4 px-3 pb-5" style={{ opacity: intro ? 0 : 1, transition: "opacity .5s .2s" }}>
         <Chip label="RANKS" onClick={() => setModal("leaderboard")} />
         <Chip label="HOW TO PLAY" onClick={() => setModal("howto")} />
         <Chip label="SETTINGS" onClick={() => setModal("settings")} />
