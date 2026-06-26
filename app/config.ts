@@ -4,7 +4,7 @@ export const GAME_CONFIG = {
   network: "mainnet-beta" as const,
 };
 
-export const CA: string = "COMING SOON";           // Replace with real CA on launch
+export const CA: string = "HKM7bXhcUhHvhf4Dsbf35bJtKNxKMSngC3BcKrpspump";           // Replace with real CA on launch
 export const X_URL = "https://x.com/mldlplay_sol";
 export const TICKER = "$MLDL";
 export const TOKEN_NAME = "MLDL";
