@@ -4,6 +4,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import { GAME_CONFIG, X_URL, CA, TICKER } from "./config";
 import { display, ui } from "./fonts";
 import { MusicEngine } from "./music";
@@ -107,7 +108,8 @@ export default function Home() {
 
 function Logo() {
   return (
-    <div className="select-none text-center leading-none" style={{ fontFamily: "var(--font-display)" }}>
+    <div className="select-none text-center leading-none flex flex-col items-center" style={{ fontFamily: "var(--font-display)" }}>
+      <Image src="/x-avatar.png" alt="" width={56} height={56} style={{ borderRadius: "50%", objectFit: "cover", marginBottom: 8 }} />
       <div className="text-lg md:text-2xl" style={{ color: "#1a1230" }}>MEME LORDS</div>
       <div className="text-5xl md:text-7xl text-outline" style={{ color: "#ffd23d", filter: "drop-shadow(0 6px 0 #b97a00)" }}>DRIFT LEAGUE</div>
     </div>
